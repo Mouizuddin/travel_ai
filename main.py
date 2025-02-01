@@ -3,19 +3,25 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 from tqdm.contrib.concurrent import thread_map
+import time
 
 
-st.header('Travel With AI', divider='rainbow')
+st.header('Travel With AI :racing_motorcycle:', divider='rainbow') #project title
 
 def get_pagination_links():
     pagination_link = []
     for i in range(1,96+1):
         link = f'https://www.eventbrite.sg/d/singapore/all-events/?page={i}'
-        st.write(f"Start scrape for  >> {link} ")
         pagination_link.append(link)
     return pagination_link
 
 pagination_urls = get_pagination_links()
+st.markdown(
+    f"<h4 style='text-align: center; color: #FF0000; background: linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8B00FF); -webkit-background-clip: text; color: transparent;'>🚀 Scraping the Data for the Up-Coming Events 🔍</h4>"
+    ,
+    unsafe_allow_html=True
+)
+
 def get_all_event_urls(pass_links):
     cookies = {
         'django_timezone': 'Asia/Calcutta',
@@ -59,10 +65,21 @@ def get_all_event_urls(pass_links):
     event_link = [x.find('a')['href'] for x in code.findAll('section',{'class':'event-card-details'})]
     return event_link
 
-all_event_pages_links = thread_map(get_all_event_urls, pagination_urls )
+all_event_pages_links = thread_map(get_all_event_urls, pagination_urls[:4] )
+
+loading_message = st.empty()
+loading_message.markdown("<h4 style='text-align: center; color: #3498db;'>🔄 Loading events...</h4>", unsafe_allow_html=True)
+
+# Simulating a time-consuming operation (replace this with your actual code)
+time.sleep(4)  # Simulate a delay (3 seconds)
 
 one_d_event_links = list(set(j for i in all_event_pages_links for j in i))
-st.write(f"Total number of events found on web-page >> {len(pagination_urls)}")
+st.markdown(
+    f"<h3 style='text-align: center; font-weight: bold; color: #FF5733; font-size: 28px;'>"
+    f"🔥 Wow! Found {len(one_d_event_links)} Events 🔥</h3>",
+    unsafe_allow_html=True
+)
+loading_message.empty()
 
 
 def get_inner_page_data(pass_links):
@@ -126,10 +143,29 @@ def get_inner_page_data(pass_links):
 
 all_page_data = thread_map(get_inner_page_data, one_d_event_links)
 df = pd.DataFrame(all_page_data)
-st.write(df)
-st.write(f'Data Frame shape >> {pd.DataFrame(df).shape}')
+
+# Display the DataFrame with some custom styling
+
+loading_message = st.empty()
+loading_message.markdown(
+    f"<h4 style='text-align: center; color: #3498db;'>🔄 Getting data from {len(one_d_event_links)} links </h4>"
+    , unsafe_allow_html=True
+)
+st.markdown(
+    "<h2 style='text-align: center; font-weight: bold; color: #FF5733;'>"
+    "⏳ When data keeps you waiting, it's fun 😄"
+    "</h2>",
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    "<h2 style='text-align: center; color: #2ecc71;'>📊 Data Overview</h2>",
+    unsafe_allow_html=True
+)
+st.dataframe(df)
 
 csv = df.to_csv(index=False)
+st.write(f"This is the shape of are data set {df.shape}")
 
 # Create a download button
 st.download_button(
